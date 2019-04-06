@@ -38,16 +38,14 @@
 int main(int argc, char *argv[]){
 	int p_num; //for number of processes
 	PROCESS *p_array; //struct process_
-
 	int i; //for loops
 
 	printf("**** Scheduler simulator - FIFO, RR, MLFQ, Lottery ****\n");
 	printf("Number of processes? : ");
 	scanf("%d", &p_num);
+  
 	//Dinamic allocation of memory
 	p_array = (int*)malloc(sizeof(PROCESS) * p_num);
-
-	printf("Input all the names of processes together : ");
 
 	for(i=0; i<p_num; i++) {
 		printf("Input the name(single char) of %dth process : ", i);
