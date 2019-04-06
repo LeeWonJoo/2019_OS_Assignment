@@ -1,8 +1,8 @@
 #
 #	DKU Operating System Lab
 #	    Lab1 (Scheduler Algorithm Simulator)
-#	    Student id : 
-#	    Student name : 
+#	    Student id : 32170896, 32163395
+#	    Student name : Kim EunJin, Lee WonJoo
 #
 #   Makfeile :
 #       - Makefile for lab1 compilation.

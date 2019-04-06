@@ -1,19 +1,21 @@
 /*
 *	DKU Operating System Lab
 *	    Lab1 (Scheduler Algorithm Simulator)
+*	    Student id : 32170896, 32163395
+*	    Student name : Kim EunJin, Lee WonJoo
 *	    Student id : 
 *	    Student name : 
 *
 *   lab1_sched.c :
 *       - Lab1 source file.
-*       - Must contains scueduler algorithm test code.
+*       - Must contain scheduler algorithm test code.
 *
 */
 
 #include <aio.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
+//#include <fcntl.h> - Why included for 2 times?
 #include <errno.h>
 #include <time.h>
 #include <sys/time.h>
@@ -35,9 +37,7 @@
 
 int main(int argc, char *argv[]){
 	int p_num; //for number of processes
-	int *process; //for temporary
-	char *p_name; //for temporary
-	/*need to make a structure for process!!!*/
+	PROCESS *p_array; //struct process_
 
 	int i; //for loops
 
@@ -45,13 +45,26 @@ int main(int argc, char *argv[]){
 	printf("Number of processes? : ");
 	scanf("%d", &p_num);
 	//Dinamic allocation of memory
-	process = (int*)malloc(sizeof(int) * p_num);
-	p_name = (char*)malloc(sizeof(char) * p_num);
+	p_array = (int*)malloc(sizeof(PROCESS) * p_num);
 
 	printf("Input all the names of processes together : ");
+
 	for(i=0; i<p_num; i++) {
-		scanf("%c", &p_name[i]);
+		printf("Input the name(single char) of %dth process : ", i);
+		scanf("%c", &p_array[i]->name);
+		printf("Input arrival time of %c : ", p_array[i]->name);
+		scanf("%d", &p_array[i]->t_arrival);
+		printf("Input service time of %c : ", p_array[i]->name);
+		scanf("%d", &p_array[i]->t_service);			
 	}
 
-}
+	/* Now calls all the scheduling simulator */
+	/* You can modify the name and args of the functions */
+	
+	//sched_FIFO(p_array, p_num);
+	//sched_RoundRobin(p_array, p_num);
+	//sched_MLFQ(p_array, p_num);
+	//sched_Lottery(p_array, p_num);
 
+	return 0;
+}
