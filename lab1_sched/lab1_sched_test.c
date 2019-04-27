@@ -55,20 +55,38 @@ int main(int argc, char *argv[]){
 	const int p_num = process_num; //to prevent any changes to process_num
 	PROCESS *p_array[p_num]; //array for PROCESS*(struct process_*)
 
-printf("main ");
-
 	//Dinamic allocation and initialization is done in insertProcess()
 	insert_process(p_array);
 
 	char_result = (char*)calloc(t_total, sizeof(char));
+	result = (int**)calloc(p_num, sizeof(int*));
+	for(int i=0; i<p_num; i++) {
+		result[i] = (int*)calloc(t_total, sizeof(int));
+	}
 	
 	/* Now calls all the scheduling simulator */
 	/* You can modify the args of the functions */
 
-	//sched_FIFO(p_array);
+	sched_FIFO(p_array);
+	print_sched(p_array);
+
 	sched_RoundRobin(p_array);
-	//sched_MLFQ(p_array);
-	//sched_Lottery(p_array);
+	print_sched(p_array);
+
+	sched_MLFQ(p_array, 1); //timeslice is 1
+	print_sched(p_array);
+
+	sched_MLFQ(p_array, 2); //timeslice is q(i) = 2^i
+	print_sched(p_array);
+
+	sched_SJF(p_array);
+	print_sched(p_array);
+
+	sched_Lottery(p_array);
+	//print_sched(p_array);
+
+	//sched_RM(p_array);
+	//print_sched(p_array);
 
 	return 0;
 }
@@ -79,7 +97,6 @@ void insert_process(PROCESS* p_array[])
 	int i; //for loops
 	const int p_num = process_num; //to prevent any changes to process_num
 	
-printf("allocate ");	
 	allocate_memory(p_array);
 
 	//Initialization process
@@ -91,13 +108,13 @@ printf("allocate ");
 		scanf("%d", &p_array[i]->t_arrival);
 		printf("Input service time of %c : ", p_array[i]->name);
 		scanf("%d", &p_array[i]->t_service);
-		printf("Input priority of %c (for Lotterty sched) : ", p_array[i]->name);
-		scanf("%d", &p_array[i]->priority);
+		printf("Input ticket of %c (for Lotterty sched) : ", p_array[i]->name);
+		scanf("%d", &p_array[i]->ticket);
+//		printf("Input rate of %c (for RM sched)(if there's no rate, input -1 ) : ", p_array[i]->name);
+//		scanf("%d", &p_array[i]->rate);
 		//t_process is always initialize with the value of t_service
 		p_array[i]->t_process = p_array[i]->t_service;
 		t_total += p_array[i]->t_service;
-	}
-
-printf("initialize done ");	
+	}	
 	return;
 }
