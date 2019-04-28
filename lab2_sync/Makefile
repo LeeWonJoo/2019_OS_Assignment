@@ -1,11 +1,11 @@
 #
 #	DKU Operating System Lab
 #	    Lab2 (BST Synchronization)
-#	    Student id : 
-#	    Student name : 
+#	    Student id : 32170896, 32163395, 32162925
+#	    Student name : Kim EunJin, Lee WonJoo, Yun SeulGi
 #
-#   Makfeile :
-#       - Makefile for lab2 compilation.
+#	Makfeile :
+#	    - Makefile for lab2 compilation.
 #
 
 CC = gcc

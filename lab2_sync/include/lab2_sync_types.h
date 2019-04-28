@@ -1,13 +1,12 @@
 /*
 *	DKU Operating System Lab
 *	    Lab2 (Synchronization)
-*	    Student id : 
-*	    Student name : 
+*	    Student id : 32170896, 32163395, 32162925
+*	    Student name : Kim EunJin, Lee WonJoo, Yun SeulGi
 *
-*   lab1_sched.c :
-*       - Lab2 header file.
-*       - It contains bst node structure, timeval functions, atomic functions .. etc.
-*
+*	lab1_sched.c :
+*	    - Lab2 header file.
+*	    - It contains bst node structure, timeval functions, atomic functions .. etc.
 */
 
 
@@ -27,12 +26,10 @@
  *  int key                 : node key value 
  */
 typedef struct lab2_node {
-
     pthread_mutex_t mutex;
     struct lab2_node *left;
     struct lab2_node *right;
     int key;
-
 } lab2_node;
 
 /*
