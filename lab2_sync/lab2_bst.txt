@@ -135,7 +135,7 @@ int lab2_node_insert(lab2_tree* tree, lab2_node* new_node)
 	lab2_node* nextNode = tree->root;
 	lab2_node* currNode;
 	int isLeft = 1;
-/*
+
 	if(tree->root == NULL) {
 		tree->root = new_node;
 	}
@@ -162,18 +162,6 @@ int lab2_node_insert(lab2_tree* tree, lab2_node* new_node)
 			currNode->right = new_node;
 		}
 	}
-	return LAB2_SUCCESS;
-*/
-	//tree is empty -> node create
-	if(tree->root==NULL){
-		return lab2_node_create(new_node->key);
-	}
-
-	if(new_node->key < nextNode->key)
-		nextNode->left = lab2_node_insert(nextNode->left,new_node);
-	else if(new_node->key>nextNode->key)
-		nextNode->right = lab2_node_insert(nextNode->right,new_node);
-
 	return LAB2_SUCCESS;
 }
 
@@ -352,10 +340,6 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
     // You need to implement lab2_node_remove_fg function.
 	lab2_node* nextNode = tree->root;
 	lab2_node* currNode = NULL;
-	lab2_node* substitute = NULL;
-
-	lab2_node* tmp1 = NULL;
-	lab2_node* tmp2 = NULL;
 
 	int isFound=0;
 
@@ -366,16 +350,16 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 		while(nextNode != NULL) {
 			currNode = nextNode;
 			//make lock and check this node
-			pthread_mutex_unlock(&(currNode->mutex));
-			if(currNode->key == key) {
-				isFound = 1;
-				break;
-			}
-			else if(currNode->key < key) {
+			pthread_mutex_lock(&(currNode->mutex));
+			if(currNode->key < key) {
 				nextNode = currNode->left;
 			}
-			else {
+			else if(currNode->key > key){
 				nextNode = currNode->right;
+			}
+			else {
+				isFound=1;
+				break;
 			}
 			pthread_mutex_unlock(&(currNode->mutex));
 		}//breaks when nextNode == NULL or currNode->kew == key
@@ -388,9 +372,28 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 		}
 		else {
 			//matching node is found
-			//no need to check for any other node having same key value
-			//find for substitute node --> smallest node from the right tree
-			//
+			//need to check for any other node having same key value
+			//node with same key value will be as left child
+				nextNode = currNode->left;
+			//while(currNode->left->key == currNode->key) {
+			//while(nextNode->key == currNode->key) {
+			while((nextNode != NULL) && (nextNode->key == currNode->key)) {
+				//nextNode = currNode->left;
+				//if(nextNode->key == currNode->key) {
+					int check_lock = pthread_mutex_trylock(&(nextNode->mutex));
+					if(check_lock == EBUSY) {
+						//when next node with same key is already locked by other thread
+						pthread_cond_wait(&cond, &(currNode->mutex));
+				nextNode = currNode->left;
+						continue;
+					} else if(!check_lock) {
+						//when trylock func is successed
+						pthread_mutex_unlock(&(currNode->mutex));
+						currNode = nextNode;
+						nextNode = currNode->left
+					}
+				//}
+			}
 			lab2_node_delete(currNode);
 			
 		}
