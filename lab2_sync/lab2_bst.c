@@ -132,7 +132,7 @@ int lab2_node_insert(lab2_tree* tree, lab2_node* new_node)
 	lab2_node* nextNode = tree->root;
 	lab2_node* currNode;
 	int isLeft = 1;
-
+/*
 	if(tree->root == NULL) {
 		tree->root = new_node;
 	}
@@ -155,6 +155,18 @@ int lab2_node_insert(lab2_tree* tree, lab2_node* new_node)
 			currNode->right = new_node;
 		}
 	}
+	return LAB2_SUCCESS;
+*/
+	//tree is empty -> node create
+	if(tree->root==NULL){
+		return lab2_node_create(new_node->key);
+	}
+
+	if(new_node->key < nextNode->key)
+		nextNode->left = lab2_node_insert(nextNode->left,new_node);
+	else if(new_node->key>nextNode->key)
+		nextNode->right = lab2_node_insert(nextNode->right,new_node);
+
 	return LAB2_SUCCESS;
 }
 
