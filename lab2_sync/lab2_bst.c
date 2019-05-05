@@ -58,6 +58,8 @@ lab2_tree* lab2_tree_create()
 {
     // You need to implement lab2_tree_create function.
 	lab2_tree* newTree = (lab2_tree*)malloc(sizeof(lab2_tree));
+	int check = pthread_mutex_init(&(newTree->mutex), NULL);
+	assert(check == 0); //checking success
 	newTree->root = NULL;
 	return newTree;
 }
@@ -74,6 +76,7 @@ lab2_tree* lab2_tree_create()
 void lab2_tree_delete(lab2_tree* tree)
 {
     // You need to implement lab2_tree_delete function.
+	pthread_mutex_destroy(&(tree->mutex));
 	free(tree);
 	return;
 }
@@ -280,7 +283,7 @@ int lab2_node_remove(lab2_tree* tree, int key)
 			pastNode = currNode;
 			currNode = nextNode;
 			//make lock and check this node
-			pthread_mutex_lock(&(currNode->mutex));
+			//pthread_mutex_lock(&(currNode->mutex));
 			if(currNode->key < key) {
 				nextNode = currNode->left;
 			}
