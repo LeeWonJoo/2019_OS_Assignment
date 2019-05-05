@@ -77,6 +77,8 @@ int lab2_node_remove(lab2_tree* tree, int key);
 int lab2_node_remove_fg(lab2_tree* tree, int key);
 int lab2_node_remove_cg(lab2_tree* tree, int key);
 
+lab2_node* lab2_right_smallest(lab2_node* r_node);
+lab2_node* lab2_left_biggest(lab2_node* l_node);
 
 
 /*
