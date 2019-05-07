@@ -19,6 +19,9 @@
 
 #include "lab2_sync_types.h"
 
+pthread_mutex_t fgLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t fgLock2 = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * TODO
  *  Implement funtction which traverse BST in in-order
@@ -393,11 +396,13 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 	}
 	else {
 		pthread_mutex_unlock(&(tree->mutex));
+		pthread_mutex_lock(&fgLock);
 		while(currNode != NULL) {
 			//make lock and check this node
-			pthread_mutex_lock(&(currNode->mutex));
+			//pthread_mutex_lock(&(currNode->mutex));
 			if(currNode->key == key) {
 				isFound = 1;
+				pthread_mutex_lock(&fgLock2);
 				break;
 			}
 			pastNode = currNode;
@@ -408,17 +413,18 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 			else {
 				currNode = currNode->right;
 			}
-			pthread_mutex_unlock(&(currNode->mutex));
 		}//breaks when nextNode == NULL or currNode->kew == key
 		//now time to delete!!
 		
-		pthread_mutex_lock(&(pastNode->mutex));
+		//pthread_mutex_lock(&(pastNode->mutex));
+		pthread_mutex_unlock(&fgLock);
 		
 		if(!isFound) {
 			//when nextNode == NULL
 			//means, matching node not found
-			pthread_mutex_unlock(&(pastNode->mutex));
-			pthread_mutex_unlock(&(currNode->mutex));
+			//pthread_mutex_unlock(&(pastNode->mutex));
+			//pthread_mutex_unlock(&(currNode->mutex));
+			pthread_mutex_unlock(&fgLock2);
 			return LAB2_ERROR;
 		}
 		else {
@@ -427,31 +433,33 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 			//when currNode has 2 child node,
 			//we need to find for substitute node
 			//--> smallest node from the right tree
+			
 			if((currNode->right != NULL) && (currNode->right != NULL)) {
 				subNode = currNode->right;
 				p_subNode = currNode;
-				pthread_mutex_lock(&(subNode->mutex));
+
+				//pthread_mutex_lock(&(subNode->mutex));
 				while(subNode->left != NULL) {
 					p_subNode = subNode;
 					subNode = subNode->left;
-					pthread_mutex_unlock(&(p_subNode->mutex));
-					pthread_mutex_lock(&(subNode->mutex));
+					//pthread_mutex_unlock(&(p_subNode->mutex));
+					//pthread_mutex_lock(&(subNode->mutex));
 				}
-				//temporal save of currNode&pastNode for mutex unlock
-				lab2_node* tmp1 = currNode;
-				lab2_node* tmp2 = pastNode;
+				//obtains lock of subNode
+				//now temporal save of currNode&pastNode for mutex unlock
+				//lab2_node* temp = pastNode;
 
-				pthread_mutex_lock(&(p_subNode->mutex));
+				//pthread_mutex_lock(&(p_subNode->mutex));
 
-				//now, change ONLY the key value!!
+				//now, changes ONLY the key value!!
 				currNode->key = subNode->key;
+				//pthread_mutex_unlock(&(currNode->mutex));
 				//key value changed,
 				//now the "subNode" will be the node we will delete(now no needed)
 				currNode = subNode;
 				pastNode = p_subNode;
 
-				pthread_mutex_unlock(&(tmp1->mutex));
-				pthread_mutex_unlock(&(tmp2->mutex));
+				//pthread_mutex_unlock(&(temp->mutex));
 			}
 
 			//case when currNode have a child on left
@@ -470,9 +478,10 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 				else
 					pastNode->right = tmp;
 			}
-			pthread_mutex_unlock(&(pastNode->mutex));
+			//pthread_mutex_unlock(&(pastNode->mutex));
 			//now deletes the node!!
 			lab2_node_delete(currNode);
+			pthread_mutex_unlock(&fgLock2);
 		}
 	}
 	return LAB2_SUCCESS;
