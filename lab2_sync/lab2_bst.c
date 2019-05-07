@@ -40,7 +40,7 @@ int lab2_node_inorder(lab2_node* node)
 	if(node) {
 		node_count++;
 		lab2_node_inorder(node->left);
-		printf("%d ", node->key);
+//		printf("%d ", node->key);
 		lab2_node_inorder(node->right);
 	}
 	return node_count;
@@ -181,10 +181,14 @@ int lab2_node_insert_fg(lab2_tree* tree, lab2_node* new_node)
 	lab2_node* currNode;
 	int isLeft = 1;
 
+	pthread_mutex_lock(&(tree->mutex));
 	if(tree->root == NULL) {
 		tree->root = new_node;
+		pthread_mutex_unlock(&(tree->mutex));
+		return LAB2_SUCCESS;
 	}
 	else {
+		pthread_mutex_unlock(&(tree->mutex));
 		while(1) {
 			currNode = nextNode;
 			//make lock and check this node
@@ -237,16 +241,18 @@ int lab2_node_insert_cg(lab2_tree* tree, lab2_node* new_node)
 	lab2_node* currNode;
 	int isLeft = 1;
 
+	pthread_mutex_lock(&(tree->mutex));
 	if(tree->root == NULL) {
 		tree->root = new_node;
+		pthread_mutex_unlock(&(tree->mutex));
+		return LAB2_SUCCESS;
 	}
 	else {
-		pthread_mutex_lock(&(tree->root->mutex));
 		while(nextNode != NULL) {
 			currNode = nextNode;
 			if(currNode->key == new_node->key) {
 				lab2_node_delete(new_node);
-				pthread_mutex_unlock(&(tree->root->mutex));
+				pthread_mutex_unlock(&(tree->mutex));
 				return LAB2_ERROR;
 			}
 			else if(currNode->key < new_node->key) {
@@ -264,9 +270,9 @@ int lab2_node_insert_cg(lab2_tree* tree, lab2_node* new_node)
 		else {
 			currNode->right = new_node;
 		}
-		pthread_mutex_unlock(&(tree->root->mutex));
+		pthread_mutex_unlock(&(tree->mutex));
 	}
-	return 0;
+	return LAB2_SUCCESS;
 }
 
 
@@ -285,32 +291,28 @@ int lab2_node_remove(lab2_tree* tree, int key)
 	lab2_node* pastNode = NULL;
 	lab2_node* subNode = NULL; //for substitution
 	lab2_node* p_subNode = NULL; //for substitution
-​
+
 	lab2_node* tmp = NULL;
-​
+
 	int isFound=0;
-​
+
 	if(tree->root == NULL) {
 		return LAB2_ERROR;
 	}
 	else {
 		while(currNode != NULL) {
-			//make lock and check this node
-			pthread_mutex_unlock(&(currNode->mutex));
 			if(currNode->key == key) {
 				isFound = 1;
 				break;
 			}
 			pastNode = currNode;
-			else {
-				if(currNode->key < key) {
-					currNode = currNode->left;
-				}
-				else {
-					currNode = currNode->right;
-				}
+
+			if(currNode->key < key) {
+				currNode = currNode->left;
 			}
-			pthread_mutex_unlock(&(currNode->mutex));
+			else {
+				currNode = currNode->right;
+			}
 		}//breaks when nextNode == NULL or currNode->kew == key
 		//now time to delete!!
 		
@@ -339,7 +341,7 @@ int lab2_node_remove(lab2_tree* tree, int key)
 				currNode = subNode;
 				pastNode = p_subNode;
 			}
-​
+
 			//case when currNode have a child on left
 			if(currNode->right == NULL) {
 				tmp = currNode->left;
@@ -347,7 +349,7 @@ int lab2_node_remove(lab2_tree* tree, int key)
 			else { //incase if currNode has any child on right...
 				tmp = currNode->right;
 			}
-​
+
 			if(currNode == tree->root)
 				tree->root = tmp;
 			else{
@@ -379,38 +381,44 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 	lab2_node* pastNode = NULL;
 	lab2_node* subNode = NULL; //for substitution
 	lab2_node* p_subNode = NULL; //for substitution
-​
+
 	lab2_node* tmp = NULL;
-​
+
 	int isFound=0;
-​
+
+	pthread_mutex_lock(&(tree->mutex));
 	if(tree->root == NULL) {
+		pthread_mutex_unlock(&(tree->mutex));
 		return LAB2_ERROR;
 	}
 	else {
+		pthread_mutex_unlock(&(tree->mutex));
 		while(currNode != NULL) {
 			//make lock and check this node
-			pthread_mutex_unlock(&(currNode->mutex));
+			pthread_mutex_lock(&(currNode->mutex));
 			if(currNode->key == key) {
 				isFound = 1;
 				break;
 			}
 			pastNode = currNode;
+
+			if(currNode->key < key) {
+				currNode = currNode->left;
+			}
 			else {
-				if(currNode->key < key) {
-					currNode = currNode->left;
-				}
-				else {
-					currNode = currNode->right;
-				}
+				currNode = currNode->right;
 			}
 			pthread_mutex_unlock(&(currNode->mutex));
 		}//breaks when nextNode == NULL or currNode->kew == key
 		//now time to delete!!
 		
+		pthread_mutex_lock(&(pastNode->mutex));
+		
 		if(!isFound) {
 			//when nextNode == NULL
 			//means, matching node not found
+			pthread_mutex_unlock(&(pastNode->mutex));
+			pthread_mutex_unlock(&(currNode->mutex));
 			return LAB2_ERROR;
 		}
 		else {
@@ -422,18 +430,30 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 			if((currNode->right != NULL) && (currNode->right != NULL)) {
 				subNode = currNode->right;
 				p_subNode = currNode;
+				pthread_mutex_lock(&(subNode->mutex));
 				while(subNode->left != NULL) {
 					p_subNode = subNode;
 					subNode = subNode->left;
+					pthread_mutex_unlock(&(p_subNode->mutex));
+					pthread_mutex_lock(&(subNode->mutex));
 				}
+				//temporal save of currNode&pastNode for mutex unlock
+				lab2_node* tmp1 = currNode;
+				lab2_node* tmp2 = pastNode;
+
+				pthread_mutex_lock(&(p_subNode->mutex));
+
 				//now, change ONLY the key value!!
 				currNode->key = subNode->key;
 				//key value changed,
 				//now the "subNode" will be the node we will delete(now no needed)
 				currNode = subNode;
 				pastNode = p_subNode;
+
+				pthread_mutex_unlock(&(tmp1->mutex));
+				pthread_mutex_unlock(&(tmp2->mutex));
 			}
-​
+
 			//case when currNode have a child on left
 			if(currNode->right == NULL) {
 				tmp = currNode->left;
@@ -441,7 +461,7 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 			else { //incase if currNode has any child on right...
 				tmp = currNode->right;
 			}
-​
+
 			if(currNode == tree->root)
 				tree->root = tmp;
 			else{
@@ -450,13 +470,13 @@ int lab2_node_remove_fg(lab2_tree* tree, int key)
 				else
 					pastNode->right = tmp;
 			}
+			pthread_mutex_unlock(&(pastNode->mutex));
 			//now deletes the node!!
 			lab2_node_delete(currNode);
 		}
 	}
 	return LAB2_SUCCESS;
-}​
-
+}
 
 /* 
  * TODO
@@ -473,38 +493,36 @@ int lab2_node_remove_cg(lab2_tree* tree, int key)
 	lab2_node* pastNode = NULL;
 	lab2_node* subNode = NULL; //for substitution
 	lab2_node* p_subNode = NULL; //for substitution
-​
+
 	lab2_node* tmp = NULL;
-​
+
 	int isFound=0;
-​
+
+	pthread_mutex_lock(&(tree->mutex));
 	if(tree->root == NULL) {
 		return LAB2_ERROR;
 	}
 	else {
 		while(currNode != NULL) {
-			//make lock and check this node
-			pthread_mutex_unlock(&(currNode->mutex));
 			if(currNode->key == key) {
 				isFound = 1;
 				break;
 			}
 			pastNode = currNode;
-			else {
-				if(currNode->key < key) {
-					currNode = currNode->left;
-				}
-				else {
-					currNode = currNode->right;
-				}
+
+			if(currNode->key < key) {
+				currNode = currNode->left;
 			}
-			pthread_mutex_unlock(&(currNode->mutex));
+			else {
+				currNode = currNode->right;
+			}
 		}//breaks when nextNode == NULL or currNode->kew == key
 		//now time to delete!!
 		
 		if(!isFound) {
 			//when nextNode == NULL
 			//means, matching node not found
+			pthread_mutex_unlock(&(tree->mutex));
 			return LAB2_ERROR;
 		}
 		else {
@@ -520,6 +538,7 @@ int lab2_node_remove_cg(lab2_tree* tree, int key)
 					p_subNode = subNode;
 					subNode = subNode->left;
 				}
+
 				//now, change ONLY the key value!!
 				currNode->key = subNode->key;
 				//key value changed,
@@ -527,7 +546,7 @@ int lab2_node_remove_cg(lab2_tree* tree, int key)
 				currNode = subNode;
 				pastNode = p_subNode;
 			}
-​
+
 			//case when currNode have a child on left
 			if(currNode->right == NULL) {
 				tmp = currNode->left;
@@ -535,7 +554,7 @@ int lab2_node_remove_cg(lab2_tree* tree, int key)
 			else { //incase if currNode has any child on right...
 				tmp = currNode->right;
 			}
-​
+
 			if(currNode == tree->root)
 				tree->root = tmp;
 			else{
@@ -547,6 +566,7 @@ int lab2_node_remove_cg(lab2_tree* tree, int key)
 			//now deletes the node!!
 			lab2_node_delete(currNode);
 		}
+		pthread_mutex_unlock(&(tree->mutex));
 	}
 	return LAB2_SUCCESS;
 }
